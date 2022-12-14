@@ -26,7 +26,7 @@
 
         <p><small id="susto" class="d-none">Sinto muito, mas resultado acima é <b>completamente aleatório</b>, e você teve sorte de não termos coletado seu CPF 😂 Caso ainda não esteja claro, <b>isso aqui é uma piada</b>. Caiu no bait? Ajude informando um amigo.</small></p>
 
-        <p><small id="ajuda" class="d-none">Não gostou do resultado? Clique em <b>Contestar</b> até arrumar o seu "voto"! <b>Atenção</b>: sua escolha ficará salva no seu dispositivo, mas não garantimos o sigilo dela!</small></p>
+        <p><small id="ajuda" class="d-none">Não gostou do resultado? Você pode clicar em <b>Contestar</b> até arrumar o seu "voto". <b>Atenção</b>: jamais revele o seu voto real, existe um motivo pra não votarmos pela internet!</small></p>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js" integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -36,6 +36,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js" integrity="sha512-PmGDkK2UHGzTUfkFGcJ8YSrD/swUXekcca+1wWlrwALIZho9JX+3ddaaI9wmmf8PmgDIpMtx6TU8YBJAZS0mPQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script type="text/javascript">
+        storage = {}
+
         function validarCPF(cpf) {
             // https://www.geradorcpf.com/javascript-validar-cpf.htm
             if (cpf == '') return false;
@@ -82,8 +84,8 @@
 
         function geraVoto(cpf) {
             console.log('cpf', cpf);
-            if (cpf in localStorage) {
-                return geraMsg(localStorage[cpf]);
+            if (cpf in storage) {
+                return storage[cpf];
             }
 
             let hash = sha3_224(cpf);
@@ -96,17 +98,17 @@
             let voto = (magicNumber % 2 == 0) ? 22 : 13;
             console.log('voto', voto);
 
-            return geraMsg(voto);
+            return voto;
         }
 
         function contestar(cpf) {
-            if (!(cpf in localStorage)) {
-                localStorage[cpf] = geraVoto(cpf).toString();
+            if (!(cpf in storage)) {
+                storage[cpf] = geraVoto(cpf).toString();
             }
 
             let possiveis = ["22", "13", "nulo", "branco", "ausente"];
-            let i = possiveis.indexOf(localStorage[cpf]);
-            return geraMsg(localStorage[cpf] = possiveis[++i % possiveis.length]);
+            let i = possiveis.indexOf(storage[cpf]);
+            return storage[cpf] = possiveis[++i % possiveis.length];
         }
 
         $(function() {
@@ -114,7 +116,7 @@
             $('#consulta').submit(function(event) {
                 let cpf = $('#cpf').val().replace(/[^\d]+/g,'');
                 if (validarCPF(cpf)) {
-                    $('#resultado').text(geraVoto(cpf));
+                    $('#resultado').text(geraMsg(geraVoto(cpf)));
                     window.setTimeout(function() {
                         $('#contestar').removeClass('d-none');
                         $('#susto').removeClass('d-none');
@@ -128,7 +130,7 @@
             });
             $('#contestar').click(function(event) {
                 let cpf = $('#cpf').val().replace(/[^\d]+/g,'');
-                $('#resultado').text(contestar(cpf));
+                $('#resultado').text(geraMsg(contestar(cpf)));
                 event.preventDefault();
             });
         });
