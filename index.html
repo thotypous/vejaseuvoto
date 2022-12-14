@@ -17,13 +17,16 @@
                 <small id="cpfHelp" class="form-text text-muted">Não se preocupe, seus dados ficarão seguros conosco.</small>
             </div>
             <button type="submit" class="btn btn-primary" id="consultar">Consultar</button>
+            <button class="btn btn-warning d-none" id="contestar">Contestar</button>
         </form>
 
         <div class="p-1 fs-2" id="resultado"></div>
 
-        <small style="color: #eee">Este site é de cunho exclusivamente humorístico e não deve ser levado a sério.</small>
+        <p><small style="color: #eee">Este site é de cunho exclusivamente humorístico e não deve ser levado a sério.</small></p>
 
         <p><small id="susto" class="d-none">Sinto muito, mas resultado acima é <b>completamente aleatório</b>, e você teve sorte de não termos coletado seu CPF 😂 Caso ainda não esteja claro, <b>isso aqui é uma piada</b>. Caiu no bait? Ajude informando um amigo.</small></p>
+
+        <p><small id="ajuda" class="d-none">Não gostou do resultado? Clique em <b>Contestar</b> até arrumar o seu voto!</small></p>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js" integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -35,7 +38,6 @@
     <script type="text/javascript">
         function validarCPF(cpf) {
             // https://www.geradorcpf.com/javascript-validar-cpf.htm
-            cpf = cpf.replace(/[^\d]+/g,'');
             if (cpf == '') return false;
             // Elimina CPFs invalidos conhecidos
             if (cpf.length != 11 ||
@@ -71,9 +73,18 @@
             return true;
         }
 
+        function geraMsg(voto) {
+            if (voto == "ausente") {
+                return "Você não compareceu";
+            }
+            return "Você votou " + voto;
+        }
+
         function geraVoto(cpf) {
-            cpf = cpf.replace(/[^\d]+/g,'');
             console.log('cpf', cpf);
+            if (cpf in localStorage) {
+                return geraMsg(localStorage[cpf]);
+            }
 
             let hash = sha3_224(cpf);
             console.log('hash', hash);
@@ -85,22 +96,39 @@
             let voto = (magicNumber % 2 == 0) ? 22 : 13;
             console.log('voto', voto);
 
-            return voto;
+            return geraMsg(voto);
+        }
+
+        function contestar(cpf) {
+            if (!(cpf in localStorage)) {
+                localStorage[cpf] = geraVoto(cpf).toString();
+            }
+
+            let possiveis = ["22", "13", "nulo", "branco", "ausente"];
+            let i = possiveis.indexOf(localStorage[cpf]);
+            return geraMsg(localStorage[cpf] = possiveis[++i % possiveis.length]);
         }
 
         $(function() {
             VMasker(document.querySelector("#cpf")).maskPattern("999.999.999-99");
             $('#consulta').submit(function(event) {
-                let cpf = $('#cpf').val();
+                let cpf = $('#cpf').val().replace(/[^\d]+/g,'');
                 if (validarCPF(cpf)) {
-                    $('#resultado').text('Você votou ' + geraVoto(cpf));
+                    $('#resultado').text(geraVoto(cpf));
                     window.setTimeout(function() {
+                        $('#contestar').removeClass('d-none');
                         $('#susto').removeClass('d-none');
+                        $('#ajuda').removeClass('d-none');
                     }, 1000);
                 }
                 else {
                     $('#resultado').text('CPF inválido');
                 }
+                event.preventDefault();
+            });
+            $('#contestar').click(function(event) {
+                let cpf = $('#cpf').val().replace(/[^\d]+/g,'');
+                $('#resultado').text(contestar(cpf));
                 event.preventDefault();
             });
         });
